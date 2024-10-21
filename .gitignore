@@ -12,3 +12,4 @@ src/repositories/__pycache__
 src/schemas/__pycache__
 src/utils/__pycache__
 movie.db
+poetry.lock
