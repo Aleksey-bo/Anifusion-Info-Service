@@ -17,8 +17,9 @@ async def create_movie(data: MovieCreateUpdate, movie_service: Annotated[MovieSe
 
 
 @router.get("/all", status_code=status.HTTP_200_OK)
-async def get_all_movie() -> List[MovieSchemas]:
-    pass
+async def get_all_movie(movie_service: Annotated[MovieService, Depends(movie_service)]) -> List[MovieSchemas]:
+    movie_service = await movie_service.get_all_handler()
+    return movie_service
 
 
 @router.get("/get/{movie_id}", status_code=status.HTTP_200_OK)

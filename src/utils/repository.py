@@ -51,7 +51,7 @@ class SqlAlchemyRepository(AbstractRepository):
         async with async_session_maker() as session:
             stmt = select(self.model)
             res = await session.execute(stmt)
-            res = [row[0].to_read_model() for row in res.all()]
+            res = [row.to_read_model() for row in res.scalars().all()]
             return res
         
     async def get(

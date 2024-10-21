@@ -12,7 +12,7 @@ class MovieService(AbstractService):
         return await MovieRepository().create(data=data.model_dump())
     
     async def get_all_handler(self):
-        pass
+        return await MovieRepository().get_all()
 
     async def get_handler(self):
         pass

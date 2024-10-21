@@ -18,7 +18,7 @@ class MovieSchemas(BaseModel):
 class MovieCreateUpdate(BaseModel):
     title: str
     description: str
-    genre_id: List[int]
+    genres: List[int]
 
     class Config:
         from_attributes = True
