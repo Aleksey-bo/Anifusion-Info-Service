@@ -1,6 +1,6 @@
-from db.models.models import Genre
+from db.models.models import GenreModels
 from utils.repository import SqlAlchemyRepository
 
 
 class GenreRepository(SqlAlchemyRepository):
-    model = Genre
+    model = GenreModels

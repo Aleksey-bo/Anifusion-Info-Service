@@ -6,3 +6,6 @@ from pydantic import BaseModel, Field
 class CountrySchemas(BaseModel):
     id: Optional[int] = Field(default=None)
     country_name: str
+
+    class Config:
+        from_attributes = True

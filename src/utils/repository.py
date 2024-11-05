@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from sqlalchemy import delete, insert, select, update
-from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import SQLAlchemyError
 
 from db.db import async_session_maker
 
@@ -34,13 +34,16 @@ class SqlAlchemyRepository(AbstractRepository):
             self, 
             data: dict
             ) -> dict:
-        async with async_session_maker() as session:
-            stmt = insert(self.model).values(**data).returning(self.model)
-            res = await session.execute(stmt)
-            await session.commit()
-            return res.scalar_one()
+        try:
+            async with async_session_maker(expire_on_commit=False) as session:
+                stmt = self.model(**data)
+                session.add(stmt)
+                await session.commit()
+                await session.refresh(stmt)
+                return stmt
+        except SQLAlchemyError:
+            return None
 
-    
     async def get_all(
             self, 
             offset: int = 0,
@@ -49,43 +52,60 @@ class SqlAlchemyRepository(AbstractRepository):
             **kwargs
             ) -> list:
         async with async_session_maker() as session:
-            stmt = select(self.model)
+            stmt = select(self.model).filter_by(**kwargs)
             res = await session.execute(stmt)
-            res = [row.to_read_model() for row in res.scalars().all()]
+            res = [await row.to_read_model() for row in res.scalars().all()]
             return res
         
     async def get(
             self,
             *args,
             **kwargs
-            ) -> dict:
+            ):
         async with async_session_maker() as session:
             stmt = select(self.model).filter_by(**kwargs)
-
-            if args:
-                stmt = stmt.options(*[selectinload(getattr(self.model, relation)) for relation in args])
-
             res = await session.execute(stmt)
-            return res.scalar_one()
+            obj = res.scalars().first()
+            return await obj.to_read_model()
 
     async def update(
             self,
             data: dict,
             *args,
             **kwargs) -> bool:
-        async with async_session_maker() as session:
-            stmt = update(self.model).filter_by(**kwargs).values(**data)
-            await session.execute(stmt)
-            await session.commit()
-            return True
+        try:
+            async with async_session_maker() as session:
+                stmt = await session.execute(select(self.model).filter_by(**kwargs))
+                res = stmt.scalar_one_or_none()
+
+                if not res: 
+                    return False
+                
+                for key, value in data.items():
+                    setattr(res, key, value)
+                
+                await session.commit()
+                await session.refresh(res)
+                return res
+        except SQLAlchemyError as e:
+            print(e)
+            return None
 
     async def delete(
             self,
             *args,
             **kwargs):
-        async with async_session_maker() as session:
-            stmt = delete(self.model).filter_by(**kwargs)
-            await session.execute(stmt)
-            await session.commit()
-            return True
+        try:
+            async with async_session_maker() as session:
+                stmt = await session.execute(select(self.model).filter_by(**kwargs))
+                res = stmt.scalar_one_or_none()
+
+                if not res:
+                    return False
+                
+                await session.delete(res)
+                await session.commit()
+                return True
+        except SQLAlchemyError:
+            return None
     
