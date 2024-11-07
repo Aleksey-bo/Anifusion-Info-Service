@@ -65,14 +65,16 @@ class SqlAlchemyRepository(AbstractRepository):
         async with async_session_maker() as session:
             stmt = select(self.model).filter_by(**kwargs)
             res = await session.execute(stmt)
-            obj = res.scalars().first()
-            return await obj.to_read_model()
+            obj = res.scalar_one_or_none()
+            if obj is None:
+                return False
+            return obj
 
     async def update(
             self,
             data: dict,
             *args,
-            **kwargs) -> bool:
+            **kwargs):
         try:
             async with async_session_maker() as session:
                 stmt = await session.execute(select(self.model).filter_by(**kwargs))

@@ -1,13 +1,15 @@
 from typing import List
 
-from sqlalchemy import ForeignKey, Table, Column, Integer
-from sqlalchemy.orm import Mapped, mapped_column, relationship, mapper
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.db import Base
 from schemas.genre_schemas import GenreShemas
 from schemas.movie_schemas import MovieSchemas
 from schemas.country_schemas import CountrySchemas
 from schemas.studio_schemas import StudioSchemas
+from schemas.season_schemas import SeasonShemas
+from schemas.serie_schemas import SerieSchemas
 
 
 class MovieGenreAssociation(Base):
@@ -54,7 +56,7 @@ class StudioModels(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     studio_name: Mapped[str] = mapped_column(unique=True)
 
-    movies: Mapped[list["MovieModels"]] = relationship(
+    movies: Mapped[List["MovieModels"]] = relationship(
         secondary="movie_studio", back_populates="studios", lazy='selectin'
     )
 
@@ -72,11 +74,15 @@ class MovieModels(Base):
 
     country = relationship("CountryModels", back_populates="movies", lazy='selectin')
 
-    genres: Mapped[list["GenreModels"]] = relationship(
+    genres: Mapped[List["GenreModels"]] = relationship(
         secondary="movie_genre", back_populates="movies", lazy='selectin', passive_deletes=True
     )
-    studios: Mapped[list["StudioModels"]] = relationship(
+    studios: Mapped[List["StudioModels"]] = relationship(
         secondary="movie_studio", back_populates="movies", lazy='selectin', passive_deletes=True
+    )
+
+    season: Mapped["SeasonModels"] = relationship(
+        back_populates="movie", passive_deletes=True
     )
 
     async def to_read_model(self) -> MovieSchemas:
@@ -88,3 +94,42 @@ class MovieModels(Base):
             country=await self.country.to_read_model(),
             studios=[await studio_association.to_read_model() for studio_association in self.studios],
         )
+    
+
+class SeasonModels(Base):
+    __tablename__ = "seasons"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id"))
+    title: Mapped[str] = mapped_column()
+    description: Mapped[str] = mapped_column()
+    season_num: Mapped[int] = mapped_column()
+    series_count: Mapped[int] = mapped_column()
+
+    movie: Mapped["MovieModels"] = relationship(
+        back_populates="season"
+    )
+
+    series: Mapped["SerieModels"] = relationship(
+        back_populates="season", passive_deletes=True
+    )
+
+    async def to_read_model(self):
+        return SeasonShemas(**(self.__dict__))
+
+
+class SerieModels(Base):
+    __tablename__ = "series"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id"))
+    title: Mapped[int] = mapped_column()
+    serie_num: Mapped[int] = mapped_column()
+    serie_link: Mapped[str] = mapped_column()
+
+    season: Mapped["SeasonModels"] = relationship(
+        back_populates="series"
+    )
+
+    async def to_read_model(self):
+        return SerieSchemas(**(self.__dict__))

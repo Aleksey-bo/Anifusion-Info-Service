@@ -2,15 +2,14 @@ from typing import List, Annotated
 from fastapi.routing import APIRouter
 from fastapi import Depends, status
 
-from repositories.genre_repository import GenreRepository
 from core.services.genre_service import GenreService
 from schemas.genre_schemas import GenreShemas
-from api.v1.dependencies import genre_service
+from api.v1.dependencies import genre_dep
 
 
-router = APIRouter(prefix='/api/v1/genre', tags=["Genre"])
+router = APIRouter(prefix='/genre', tags=["Genre"])
 
-genre_depend = Annotated[GenreService, Depends(genre_service)]
+genre_depend = Annotated[GenreService, Depends(genre_dep)]
 
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)

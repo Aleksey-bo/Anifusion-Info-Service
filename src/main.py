@@ -24,7 +24,7 @@ def get_application() -> FastAPI:
     application.add_event_handler("startup", startup)
 
     for api_router in api_routers:
-        application.include_router(api_router)
+        application.include_router(api_router, prefix='/api/v1')
 
     return application
 
