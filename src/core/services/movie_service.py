@@ -79,7 +79,6 @@ class MovieService(AbstractService):
 
     @async_timing_decorator
     async def update_handler(self, movie_id, data) -> object|None:
-        # try:
             movie_obj_update = await self.movie_repository.update(
                 data=data.model_dump(exclude=("id", "genres", "studios")), 
                 id=movie_id
@@ -118,7 +117,6 @@ class MovieService(AbstractService):
                         movie_id=movie_obj_update.id, studio_id=studio_id
                     )
                     if studio_obj and movie_studio_association:
-                        print(movie_obj_update.studios[data.studios.index(studio_id)]["id"])
                         await self.interval_studio_repository.update(
                             data={
                                 "movie_id": movie_obj_update.id,

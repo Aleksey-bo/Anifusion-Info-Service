@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from repositories.genre_repository import GenreRepository
 from repositories.movie_repository import MovieRepository
 from repositories.studio_repository import StudioRepository
